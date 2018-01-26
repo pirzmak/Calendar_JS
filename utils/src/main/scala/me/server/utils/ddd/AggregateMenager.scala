@@ -15,7 +15,7 @@ case class AggregateMenagereState(aggregatesActors: List[AggregateId] = Nil) {
   override def toString: String = aggregatesActors.reverse.toString
 }
 
-case class NewAggregateAdded(id: AggregateId)
+case class NewAggregateAdded(id: AggregateId, organizationId: OrganizationId)
 
 class AggregateManager[AGGREGATE](actorId: String,
                                   aggregateContext: AggregateContext[AGGREGATE],
@@ -30,7 +30,7 @@ class AggregateManager[AGGREGATE](actorId: String,
   val receiveCommand: Receive = {
     case c: FirstCommand[_,_] =>
       val newAggregateId = AggregateId(numEvents)
-      persist(NewAggregateAdded(newAggregateId)) {
+      persist(NewAggregateAdded(newAggregateId, c.organizationId)) {
         event: NewAggregateAdded =>
           updateState(event.id)
         this.handleFirstCommand(c,sender(),event.id, c.organizationId)
@@ -58,6 +58,7 @@ class AggregateManager[AGGREGATE](actorId: String,
   }
 
   private def createAggregateActors(aggregateId: AggregateId, organizationId: OrganizationId) : ActorRef = {
+    println(context.child(aggregateTypeName + "_AggregateRepository_" + aggregateId.asLong))
     context.child(aggregateTypeName + "_AggregateRepository_" + aggregateId.asLong).getOrElse(
       context.actorOf(Props(new AggregateRepositoryActor[AGGREGATE](aggregateTypeName + "_AggregateRepository_" + aggregateId.asLong,
         aggregateId, organizationId, aggregateContext, documentStore) {}),aggregateTypeName + "_AggregateRepository_" + aggregateId.asLong)
@@ -66,7 +67,7 @@ class AggregateManager[AGGREGATE](actorId: String,
 
   val receiveRecover: Receive = {
     case e: NewAggregateAdded => {
-      createAggregateActors(e.id, OrganizationId(0))
+      createAggregateActorsIfNeeded(e.id, e.organizationId)
     }
   }
 

@@ -1,22 +1,22 @@
 package me.server.frontend
 
 import akka.http.scaladsl.server.Directives._
-import me.server.frontend.http.rest.{ReservationsServiceRoute, RoomsServiceRoute, UsersServiceRoute}
+import me.server.frontend.http.rest.AppointmentsServiceRoute
 import me.server.utils.CorsSupport
 
-class MainRestService(reservationsServiceRoute: ReservationsServiceRoute,
-                      roomsServiceRoute: RoomsServiceRoute) extends CorsSupport {
+class MainRestService(appointmentsServiceRoute: AppointmentsServiceRoute) extends CorsSupport {
 
-  val routes =
+  val routes  =
     pathPrefix("") {
       corsHandler {
-        pathPrefix("reservations") {
-          reservationsServiceRoute.routes
-        }
-      }~corsHandler {
-        pathPrefix("rooms") {
-          roomsServiceRoute.routes
+        pathPrefix("appointments") {
+          appointmentsServiceRoute.routes
         }
       }
+//      ~corsHandler {
+//        pathPrefix("users") {
+//          usersServiceRoute.routes
+//        }
+//      }
     }
 }
